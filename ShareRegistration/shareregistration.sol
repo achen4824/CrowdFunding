@@ -1,9 +1,6 @@
 pragma solidity >=0.4.22 <0.6.0;
 
 //TODO
-// Implement startDistribution
-// Implement finishFundingPeriod
-// possibly remove value from struct
 // Implement voting system to approve smart contracts
 
 contract crowdfunding{
@@ -14,13 +11,13 @@ contract crowdfunding{
         address next;
         uint priceperVal;
         uint amtShares;
-        uint value;
     }
     
     //Variables
     uint finishTime;
     uint amtOffers;
     uint sharesALL;
+    uint daysCompletion;
     bool startFund;
     address public headOffers;
     address owner;
@@ -28,28 +25,29 @@ contract crowdfunding{
     mapping(address => uint) userToShares;
     
     //Constructor
-    constructor(uint daysCompletion, uint sharesT) public {
+    constructor(uint idaysCompletion, uint sharesT) public {
         require(sharesT != 0,"Need goal to be more than zero");
         owner = msg.sender;
         sharesALL = sharesT;
         amtOffers = 0;
+        daysCompletion = idaysCompletion;
         userToShares[owner] = sharesT;
         startFund = false;
         finishTime = now;
     }
     
-    function startDistribution(uint releaseShares){
+    function startDistribution(uint releaseShares) public{
         startFund = true;
         finishTime = now + (24 * 60 * 60 * daysCompletion);
         userToShares[owner] -= releaseShares;
     }
 
-    //End crowdfunding callable by anyone to resign control from the creator
+    //End crowdfunding callable by anyone
     function finishFunding() public {
         require(startFund);
         require(now > finishTime,"Funding period is not done");
         address iterator = headOffers;
-        uint releasedShares = sharesALL - userToOffer[owner];
+        uint releasedShares = sharesALL - userToShares[owner];
         while(iterator != address(0) && releasedShares != 0){
             if(userToOffer[iterator].amtShares <= releasedShares){
                 //prevent re-entrance attack
@@ -69,7 +67,7 @@ contract crowdfunding{
         }
         delete userToOffer[iterator];
         if(releasedShares != 0){
-            userToShares += releasedShares;
+            userToShares[owner] += releasedShares;
         }
     }
 
@@ -86,7 +84,6 @@ contract crowdfunding{
         //set internal values
         userToOffer[current].priceperVal = insert.priceperVal;
         userToOffer[current].amtShares = insert.amtShares;
-        userToOffer[current].value = insert.value;
     }
 
     
@@ -101,15 +98,14 @@ contract crowdfunding{
         if(amtShares != 0){        //initialize offer
             createdOffer.priceperVal = msg.value/amtShares;
             createdOffer.amtShares = amtShares;
-            createdOffer.value = msg.value;
         }
 
         //check user doesn't currently have any offer
         if(userToOffer[msg.sender].amtShares != 0){
             
             //prevent re-entrance
-            uint refund = userToOffer[msg.sender].value;
-            userToOffer[msg.sender].value = 0;
+            uint refund = userToOffer[msg.sender].amtShares * userToOffer[msg.sender].priceperVal;
+            userToOffer[msg.sender].amtShares = 0;
             msg.sender.transfer(refund);
 
             //remove offer from linked list
