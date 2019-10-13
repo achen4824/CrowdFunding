@@ -2,6 +2,7 @@ pragma solidity >=0.4.22 <0.6.0;
 
 contract crowdfunding{
 
+    //double linked list node
     struct offer{
         address previous;
         address next;
@@ -16,7 +17,6 @@ contract crowdfunding{
     uint sharesALL;
     address public headOffers;
     address owner;
-    address[] shareHolders;
     mapping(address => offer) userToOffer;
     mapping(address => uint) userToShares;
     
@@ -30,7 +30,6 @@ contract crowdfunding{
 
         finishTime = now + (24 * 60 * 60 * daysCompletion);
     }
-    
     
     //insert into linked list after current offer
     function insertBehind(address prev,address current, offer memory insert) private{
@@ -50,9 +49,9 @@ contract crowdfunding{
 
     
     //fund if amtShares is 0 refund user
-    function fund(uint amtShares) external payable{
+    function offerShare(uint amtShares) external payable{
         //Validate funding
-        //require(now < finishTime,"Funding period is over");
+        require(now < finishTime,"Funding period is over");
         offer memory createdOffer;
         if(amtShares != 0){        //initialize offer
             createdOffer.priceperVal = msg.value/amtShares;
@@ -62,8 +61,11 @@ contract crowdfunding{
 
         //check user doesn't currently have any offer
         if(userToOffer[msg.sender].amtShares != 0){
-
-            msg.sender.transfer(userToOffer[msg.sender].value);
+            
+            //prevent re-entrance
+            uint refund = userToOffer[msg.sender].value;
+            userToOffer[msg.sender].value = 0;
+            msg.sender.transfer(refund);
 
             //remove offer from linked list
             if(msg.sender != headOffers){
@@ -74,64 +76,36 @@ contract crowdfunding{
             if(userToOffer[msg.sender].next != address(0)){
                 userToOffer[userToOffer[msg.sender].next].previous = userToOffer[msg.sender].previous;
             }
-            if(amtShares != 0){
-                //insert by navigating list o(n) worst case
-                address iterator = msg.sender;
-                if(createdOffer.priceperVal > userToOffer[iterator].priceperVal){
-                    while(createdOffer.priceperVal > userToOffer[iterator].priceperVal){
-                        iterator = userToOffer[iterator].previous;
-                        if(iterator == headOffers){ break; }
-                    }
-                    if(iterator == headOffers && createdOffer.priceperVal > userToOffer[iterator].priceperVal){
-                        userToOffer[iterator].previous = msg.sender;
-                        userToOffer[msg.sender] = createdOffer;
-                        userToOffer[msg.sender].next = iterator;
-                        headOffers = msg.sender;
-                    }else if(createdOffer.priceperVal > userToOffer[iterator].priceperVal){
-                        insertBehind(userToOffer[iterator].previous,msg.sender,createdOffer);
-                    }
-                    else{
-                        insertBehind(iterator,msg.sender,createdOffer);
-                    }
-                }else{
-                    if(iterator == headOffers){
-                        headOffers = userToOffer[headOffers].next;
-                    }
-                    while(createdOffer.priceperVal <= userToOffer[iterator].priceperVal){
-                        if(userToOffer[iterator].next == address(0)){ break; }
-                        iterator = userToOffer[iterator].next;
-                    } 
-                    insertBehind(iterator,msg.sender,createdOffer);
-                }
-            }else{
-                delete userToOffer[msg.sender];
-                amtOffers--;
-            }
-        }
-        //user's offer
-        else{
-            address iterator = headOffers;
+            
+        }else{
             amtOffers++;
-            while(createdOffer.priceperVal <= userToOffer[iterator].priceperVal){
-                if(userToOffer[iterator].next == address(0)){ break; }
-                iterator = userToOffer[iterator].next;
-            } 
+        }
+        //insert new offer
+        if(amtShares != 0){
+            address iterator = headOffers;
             if(headOffers == address(0)){
                 headOffers = msg.sender;
                 userToOffer[msg.sender] = createdOffer;
-            }
-            if(iterator == headOffers && createdOffer.priceperVal > userToOffer[iterator].priceperVal){
-                userToOffer[iterator].previous = msg.sender;
-                userToOffer[msg.sender] = createdOffer;
-                userToOffer[msg.sender].next = iterator;
-                headOffers = msg.sender;
-            }else if(createdOffer.priceperVal > userToOffer[iterator].priceperVal){
-                insertBehind(userToOffer[iterator].previous,msg.sender,createdOffer);
             }else{
-                insertBehind(iterator,msg.sender,createdOffer);
+                while(createdOffer.priceperVal <= userToOffer[iterator].priceperVal){
+                    if(userToOffer[iterator].next == address(0)){ break; }
+                    iterator = userToOffer[iterator].next;
+                } 
+                if(iterator == headOffers && createdOffer.priceperVal > userToOffer[iterator].priceperVal){
+                    userToOffer[iterator].previous = msg.sender;
+                    userToOffer[msg.sender] = createdOffer;
+                    userToOffer[msg.sender].next = iterator;
+                    headOffers = msg.sender;
+                }else if(createdOffer.priceperVal > userToOffer[iterator].priceperVal){
+                    insertBehind(userToOffer[iterator].previous,msg.sender,createdOffer);
+                }else{
+                    insertBehind(iterator,msg.sender,createdOffer);
+                }
             }
+        }else{
+            amtOffers--;
+            delete userToOffer[msg.sender];
         }
-        
 
     }
     
@@ -154,7 +128,7 @@ contract crowdfunding{
 
     //check whether offer is up for consideration and can be refunded in O(1)
     function checkOffer() public view returns (bool) {
-        //require(now < finishTime,"Funding period is over");
+        require(now < finishTime,"Funding period is over");
         require(userToOffer[msg.sender].amtShares != 0,"No Offer with this Address");
         address iterator = headOffers;
         uint total = 0;
@@ -162,7 +136,7 @@ contract crowdfunding{
             total += userToOffer[iterator].amtShares;
             iterator = userToOffer[iterator].next;
         }
-        if(total > sharesALL - userToShares[owner]){
+        if(total >= sharesALL - userToShares[owner]){
             return false;
         }else{
             return true;
@@ -183,3 +157,5 @@ contract crowdfunding{
         }
         return allOffers;
     }
+
+}
