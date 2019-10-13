@@ -37,11 +37,17 @@ contract crowdfunding{
     }
     
     //insert into linked list after current offer
-    function insertBehind(address prev,address current, offer insert){
+    function insertBehind(address prev,address current, offer insert) private{
+        //link nodes
         userToOffer[current].previous = prev;
         userToOffer[current].next = userToOffer[prev].next;
         userToOffer[prev].next = current;
-        userToOffer[userToOffer[current].next].previous = current; 
+        userToOffer[userToOffer[current].next].previous = current;
+
+        //set internal values
+        userToOffer[current].priceperVal = insert.priceperVal;
+        userToOffer[current].amtShares = insert.amtShares;
+        userToOffer[current].value = insert.value;
     }
 
     
@@ -62,6 +68,7 @@ contract crowdfunding{
         if(userToOffer[msg.sender].amtShares != 0){
 
             msg.sender.transfer(userToOffer[msg.sender].value);
+
             //remove offer from linked list
             userToOffer[userToOffer[msg.sender].previous].next = userToOffer[msg.sender].next;
             userToOffer[userToOffer[msg.sender].next].previous = userToOffer[msg.sender].previous;
@@ -69,14 +76,43 @@ contract crowdfunding{
                 delete userToOffer[msg.sender];
                 revert("Refunded User: Cancelled Offer");
             }else{
+                //insert by navigating list o(n) worst case
                 address iterator = msg.sender;
-                if(userToOffer[msg.sender   ].)
+                if(createdOffer.priceperVal > userToOffer[iterator]){
+                    while(createdOffer.priceperVal > userToOffer[iterator].priceperVal){
+                        if(iterator == headOffers){ break; }
+                        iterator = userToOffer[iterator].previous;
+                    }
+                    if(iterator == headOffers){
+                        iterator.previous = msg.sender;
+                        userToOffer[msg.sender] = createdOffer;
+                        userToOffer[msg.sender].next = iterator;
+                    }else{
+                        insertBehind(iterator,msg.sender,createdOffer);
+                    }
+                }else{
+                    while(createdOffer.priceperVal <= userToOffer[iterator].priceperVal){
+                        if(userToOffer[iterator].next == 0){ break; }
+                        iterator = userToOffer[iterator].next;
+                    } 
+                    insertBehind(iterator,msg.sender,createdOffer);
+                }
             }
         }
-
-        //insert offer into linked list
-        if(userToOffer[headOffers].amtShares == 0){
-
+        //user's offer
+        else{
+            address iterator = headOffers;
+            while(createdOffer.priceperVal <= userToOffer[iterator].priceperVal){
+                if(userToOffer[iterator].next == 0){ break; }
+                iterator = userToOffer[iterator].next;
+            } 
+            if(iterator == headOffers){
+                iterator.previous = msg.sender;
+                userToOffer[msg.sender] = createdOffer;
+                userToOffer[msg.sender].next = iterator;
+            }else{
+                insertBehind(iterator,msg.sender,createdOffer);
+            }
         }
         
 
