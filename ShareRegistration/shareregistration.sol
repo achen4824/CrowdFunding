@@ -12,6 +12,7 @@ contract crowdfunding{
     
     //Variables
     uint finishTime;
+    uint amtOffers;
     int sharesALL;
     address public headOffers;
     address owner;
@@ -25,7 +26,7 @@ contract crowdfunding{
         require(insertValues.length != 0, "Need values");
         owner = msg.sender;
         sharesALL = sharesT;
-        
+        amtOffers = 0;
         userToShares[owner] = sharesT;
 
         //finishTime = now + (24 * 60 * 60 * daysCompletion);
@@ -74,7 +75,8 @@ contract crowdfunding{
             userToOffer[userToOffer[msg.sender].next].previous = userToOffer[msg.sender].previous;
             if(amtShares == 0){
                 delete userToOffer[msg.sender];
-                revert("Refunded User: Cancelled Offer");
+                amtOffers--;
+                revert("Refunded User: Cancelled Offer"); //this is O(1)
             }else{
                 //insert by navigating list o(n) worst case
                 address iterator = msg.sender;
@@ -102,10 +104,16 @@ contract crowdfunding{
         //user's offer
         else{
             address iterator = headOffers;
-            while(createdOffer.priceperVal <= userToOffer[iterator].priceperVal){
+            uint total = 0;
+            amtOffers++;
+            while(createdOffer.priceperVal <= userToOffer[iterator].priceperVal && total < sharesALL - userToShares[owner]){
                 if(userToOffer[iterator].next == 0){ break; }
+                total += userToOffer[iterator].amtShares;
                 iterator = userToOffer[iterator].next;
             } 
+            if(total > sharesALL - userToShares[owner]){
+                revert("Offer to low");
+            }
             if(iterator == headOffers){
                 iterator.previous = msg.sender;
                 userToOffer[msg.sender] = createdOffer;
@@ -130,10 +138,38 @@ contract crowdfunding{
         userToShares[reciever] += amt;
     }
 
+    //check balance
     function balanceOf() public view returns (uint) {
         return userToShares[msg.sender];
     }
 
-    
+    //check whether offer is up for consideration and can be refunded in O(1)
+    function checkOffer() public view returns (bool) {
+        require(userToOffer[msg.sender].amtShares != 0,"No Offer with this Address");
+        address iterator = headOffers;
+        uint total = 0;
+        while(iterator != msg.sender){
+            total += userToOffer[iterator].amtShares;
+            iterator = userToOffer[iterator].next;
+        }
+        if(total > sharesALL - userToShares[owner]){
+            return false;
+        }else{
+            return true;
+        }
+    }
+
+    //for debugging
+    function getList() public view returns (offer[] memory){
+        offer[amtOffers] allOffers;
+        address iterator = headOffers;
+        uint i = 0;
+        while(iterator != 0){
+            offer[i] = userToOffer[iterator];
+            iterator = userToOffer[iterator].next;
+            i++;
+        }
+        return allOffers;
+    }
 
 }
