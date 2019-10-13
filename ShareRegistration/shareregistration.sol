@@ -1,5 +1,11 @@
 pragma solidity >=0.4.22 <0.6.0;
 
+//TODO
+// Implement startDistribution
+// Implement finishFundingPeriod
+// possibly remove value from struct
+// Implement voting system to approve smart contracts
+
 contract crowdfunding{
 
     //double linked list node
@@ -15,6 +21,7 @@ contract crowdfunding{
     uint finishTime;
     uint amtOffers;
     uint sharesALL;
+    bool startFund;
     address public headOffers;
     address owner;
     mapping(address => offer) userToOffer;
@@ -26,11 +33,46 @@ contract crowdfunding{
         owner = msg.sender;
         sharesALL = sharesT;
         amtOffers = 0;
-        userToShares[owner] = 0; //redo later
-
-        finishTime = now + (24 * 60 * 60 * daysCompletion);
+        userToShares[owner] = sharesT;
+        startFund = false;
+        finishTime = now;
     }
     
+    function startDistribution(uint releaseShares){
+        startFund = true;
+        finishTime = now + (24 * 60 * 60 * daysCompletion);
+        userToShares[owner] -= releaseShares;
+    }
+
+    //End crowdfunding callable by anyone to resign control from the creator
+    function finishFunding() public {
+        require(startFund);
+        require(now > finishTime,"Funding period is not done");
+        address iterator = headOffers;
+        uint releasedShares = sharesALL - userToOffer[owner];
+        while(iterator != address(0) && releasedShares != 0){
+            if(userToOffer[iterator].amtShares <= releasedShares){
+                //prevent re-entrance attack
+                uint tempShares = userToOffer[iterator].amtShares;
+                userToOffer[iterator].amtShares = 0;
+                releasedShares -= tempShares;
+                userToShares[iterator] += tempShares;
+            }else{
+                //prevent re-entrance attack
+                uint temp = releasedShares;
+                releasedShares = 0;
+                userToShares[iterator] += temp;
+            }
+            iterator = userToOffer[iterator].next;
+            //negative gas costs
+            delete userToOffer[iterator].previous;
+        }
+        delete userToOffer[iterator];
+        if(releasedShares != 0){
+            userToShares += releasedShares;
+        }
+    }
+
     //insert into linked list after current offer
     function insertBehind(address prev,address current, offer memory insert) private{
         //link nodes
@@ -51,7 +93,10 @@ contract crowdfunding{
     //fund if amtShares is 0 refund user
     function offerShare(uint amtShares) external payable{
         //Validate funding
-        require(now < finishTime,"Funding period is over");
+        //require(msg.value > 11578000000000, "Minimum bid"); released from testing later
+        require(msg.value % amtShares == 0, "Please choose an integer amount for price per share");
+        require(now < finishTime,"Funding period is closed");
+
         offer memory createdOffer;
         if(amtShares != 0){        //initialize offer
             createdOffer.priceperVal = msg.value/amtShares;
@@ -107,11 +152,6 @@ contract crowdfunding{
             delete userToOffer[msg.sender];
         }
 
-    }
-    
-    //End crowdfunding callable by anyone to resign control from the creator
-    function finishFunding() public {
-        
     }
 
     //generic share transfer
