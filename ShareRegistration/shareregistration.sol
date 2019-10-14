@@ -54,9 +54,10 @@ contract crowdfunding{
     
     function startDistribution(uint releaseShares) public{
         require(!startFund);
+        require(msg.sender == owner, "Only runnable from owner");
         require(releaseShares <= userToShares[owner]);
         startFund = true;
-        finishTime = now + (/*24 * 60 * 60 */ daysCompletion);
+        finishTime = now + (24 * 60 * 60 * daysCompletion);
         userToShares[owner] -= releaseShares;
     }
 
@@ -90,11 +91,12 @@ contract crowdfunding{
         daysCompletion = 7;
         startFund = false;
     }
-
+    
     //to allow for modification of state by other contracts
     //allows for upgrading of proposals decided by a voting system
     //ask for eth stake to prevent spamming proposals
-    function createProposal(address payable _addr) public returns (uint){
+    function createProposal(address payable _addr) public payable returns (uint){
+        require(msg.value == 2738627600000000); //$5
         require(!startFund);
         require(now > finishTime,"Funding period is not done");
         uint32 size;
@@ -144,7 +146,7 @@ contract crowdfunding{
     }
 
     function finalizeProposal(uint index) public returns (bool){
-        //require(now > currentProposals[index].endTime, "Voting Period is not finished");
+        require(now > currentProposals[index].endTime, "Voting Period is not finished");
         if(currentProposals[index].votesFor + currentProposals[index].votesAgainst + currentProposals[index].votesAbstained > sharesALL / 2 && currentProposals[index].votesAgainst < currentProposals[index].votesFor){
             currentProposals[index].contractAddress.delegatecall(abi.encodeWithSignature("modifyContract()"));
             delete currentProposals[index];
@@ -174,7 +176,7 @@ contract crowdfunding{
     //fund if amtShares is 0 refund user
     function offerShare(uint amtShares) external payable{
         //Validate funding
-        //require(msg.value > 11578000000000, "Minimum bid"); released from testing later
+        require(msg.value > 11578000000000, "Minimum bid");
         require(startFund);
         require(msg.value % amtShares == 0, "Please choose an integer amount for price per share");
         require(now < finishTime,"Funding period is closed");
