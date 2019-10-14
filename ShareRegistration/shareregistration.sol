@@ -12,6 +12,16 @@ contract crowdfunding{
         uint priceperVal;
         uint amtShares;
     }
+
+    struct proposal{
+        address payable contractAddress;
+        uint endTime;
+        uint votesFor;
+        uint votesAgainst;
+        uint votesAbstained;
+        mapping(address => bool) alreadyVoted;
+        mapping(address => uint) voteNum;
+    }
     
     //Variables
     uint finishTime;
@@ -21,8 +31,14 @@ contract crowdfunding{
     bool startFund;
     address public headOffers;
     address owner;
+    proposal[] currentProposals;
+    address[] activeContractsList;
+    mapping(address => bool) activeContracts;
     mapping(address => offer) userToOffer;
     mapping(address => uint) userToShares;
+
+    //delegatecall 
+
     
     //Constructor
     constructor(uint idaysCompletion, uint sharesT) public {
@@ -69,8 +85,67 @@ contract crowdfunding{
         if(releasedShares != 0){
             userToShares[owner] += releasedShares;
         }
+        daysCompletion = 7;
     }
 
+    //to allow for modification of state by other contracts
+    //allows for upgrading of proposals decided by a voting system
+    //ask for eth stake to prevent spamming proposals
+    function createProposal(address _addr) public returns (uint){
+        require(startFund);
+        require(now > finishTime,"Funding period is not done");
+        uint32 size;
+        //one week delay
+        assembly {
+            size := extcodesize(_addr)
+        }
+        require(size > 0,"This must be a deployed contract");
+        for(uint i = 0;i<currentProposals.length;i++){
+            if(currentProposals[index].contractAddress == address(0)){
+               currentProposals[index] = proposal(_addr , (now + (24 * 60 * 60 * daysCompletion)),0,0,0);
+               return 0;
+            }
+        }
+        currentProposals.push (proposal(_addr , (now + (24 * 60 * 60 * daysCompletion)),0,0,0));
+        return 0;
+    }
+
+    //vote 0 against 1 is for anything else is abstained
+    function voteProposal(uint index,uint vote) public{
+        require(index < currentProposals.length, "Invalid Index");
+        require(now < currentProposals[index].endTime, "Voting Period is over");
+        if(currentProposals[index].alreadyVoted[msg.sender]){
+            if(currentProposals[index].voteNum[msg.sender] == 0){
+                currentProposals[index].votesAgainst -= userToShares[msg.sender];
+            }else if(currentProposals[i].voteNum[msg.sender] == 1){
+                currentProposals[index].votesFor -= userToShares[msg.sender];
+            }else{
+                currentProposals[index].votesAbstained -= userToShares[msg.sender];
+            }
+        }
+        if(vote == 0){
+            currentProposals[i].votesAgainst += userToShares[msg.sender];
+        }else if(vote == 1){
+            currentProposals[i].votesFor += userToShares[msg.sender];
+        }else{
+            currentProposals[i].votesAbstained += userToShares[msg.sender];
+        }
+        currentProposals[index].voteNum[msg.sender] = vote;
+        currentProposals[index].alreadyVoted[msg.sender] = true;
+    }
+
+    function finalizeProposal(uint index) public returns (bool){
+        require(now > currentProposals[index].endTime, "Voting Period is not finished");
+        if(currentProposals[index].votesFor + currentProposals[index].votesAgainst + currentProposals[index].votesAbstained > sharesALL / 2 && currentProposals[index].votesAgainst < currentProposals[index].votesFor){
+            currentProposals[index].contractAddress.delegatecall(abi.encodeWithSignature("modifyContract()"));
+            delete currentProposals[index];
+            return true;
+        }else{
+            delete currentProposals[index];
+            return false;
+        }
+
+    }
     //insert into linked list after current offer
     function insertBehind(address prev,address current, offer memory insert) private{
         //link nodes
@@ -90,7 +165,7 @@ contract crowdfunding{
     //fund if amtShares is 0 refund user
     function offerShare(uint amtShares) external payable{
         //Validate funding
-        //require(msg.value > 11578000000000, "Minimum bid"); released from testing later
+        require(msg.value > 11578000000000, "Minimum bid"); released from testing later
         require(msg.value % amtShares == 0, "Please choose an integer amount for price per share");
         require(now < finishTime,"Funding period is closed");
 
@@ -162,7 +237,7 @@ contract crowdfunding{
         return userToShares[msg.sender];
     }
 
-    //check whether offer is up for consideration and can be refunded in O(1)
+    //check whether offer is up for consideration
     function checkOffer() public view returns (bool) {
         require(now < finishTime,"Funding period is over");
         require(userToOffer[msg.sender].amtShares != 0,"No Offer with this Address");
