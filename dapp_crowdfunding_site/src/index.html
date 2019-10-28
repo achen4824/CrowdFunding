@@ -52,7 +52,7 @@
 								<section>
 									<h2>Create a Crowdfunding Smart Contract</h2>
 									<p>Simply enter your desired values and hit the button to deploy the smart contract.</p>
-									<form method="post" action="#">
+									<form>
 										<div class="fields">
 										  <div class="field demo">
 											<label for="goal">Goal (Ethereum)</label>
@@ -69,7 +69,7 @@
 											<pre id="error"></pre>
 										</div>
 										<ul class="actions">
-										<li><a href="#" class="button">Create</a></li>
+										<button type="submit" onclick="App.createContract();return false;" class="button" >Fund</button>
 										</ul>
 									</form>
 								</section>
@@ -88,9 +88,10 @@
 					<section id="two" class="wrapper style3 fade-up">
 						<div class="inner">
 							<h2>Fund a Smart Contract</h2>
-							<p>Your Contracts</p>
+							<p>Your Crowdfunding Contracts</p>
 							<div class="features" id="usercrowdfund">
 							</div>
+							<p>Other Crowdfunding Contracts</p>
 							<div class="features" id="othercrowdfund">
 								
 							</div>

@@ -8,6 +8,9 @@ contract storeData {
         contractList.push(msg.sender);
         contractList.push(incontract);
     }
+	function returnList() public view returns (address[] memory){
+		return contractList;
+	}
 	function usergetList() public view returns(address[] memory){
 		uint amount = 0;
 		for(uint i = 0;i<contractList.length;i+= 2){

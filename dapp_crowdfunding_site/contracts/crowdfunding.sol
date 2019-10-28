@@ -60,6 +60,9 @@ contract crowdfunding{
             return true;
         }
     }
+    function getTime() public view returns(uint){
+        return finishTime;
+    }
     function getDescription() public view returns (string memory){
         return description;
     }
