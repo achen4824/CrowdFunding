@@ -11,6 +11,25 @@ contract storeData {
 	function returnList() public view returns (address[] memory){
 		return contractList;
 	}
+	function completeFunding(address icontract) public {
+		uint i = 0;
+		bool hit = false;
+		for(i=0;i<contractList.length;i++){
+			if(icontract == contractList[i]){
+				hit = true;
+				break;
+			}
+		}
+		if(hit){
+			delete contractList[i];
+			delete contractList[i-1];
+			if(i != contractList.length-1){
+				contractList[i] = contractList[contractList.length-1];
+				contractList[i-1] = contractList[contractList.length-2];
+			}
+			contractList.length -= 2;
+		}
+	}
 	function usergetList() public view returns(address[] memory){
 		uint amount = 0;
 		for(uint i = 0;i<contractList.length;i+= 2){

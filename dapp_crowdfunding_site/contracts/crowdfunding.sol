@@ -27,12 +27,17 @@ contract crowdfunding{
     uint finishTime;
     int goal;
     uint[] values;
+    bool completed = false;
     address payable owner;
     string description;
     address[] funderList;
     address payable[] allFunders;
     mapping(address => funder) addressToValue;
     mapping(uint => int) indexes;
+
+    function ifCompleted()public view returns (bool){
+        return completed;
+    }
     
     //Constructor
     constructor(uint daysCompletion, uint goalinWei,string memory idescription) public {
@@ -53,6 +58,14 @@ contract crowdfunding{
         indexes[goalinWei/(5)] = -1;  
 
     }
+    function getFunderValues() public view returns (uint[] memory){
+        uint[] memory allvalues = new uint[](allFunders.length);
+        for(uint i =0; i< allFunders.length;i++){
+            allvalues[i] = addressToValue[allFunders[i]].fund;
+        }
+        return allvalues;
+    }
+
     function hasFund()public view returns (bool){
         if(addressToValue[msg.sender].fund == 0){
             return false;
@@ -72,7 +85,7 @@ contract crowdfunding{
     }
     
     //fund
-    function fund() external payable{
+    function fund() external payable returns (bool){
         
         //Validate funding
         require(now < finishTime,"Funding period is over");
@@ -90,6 +103,13 @@ contract crowdfunding{
             //option to add more money
             revert("Currently no option to revert money");
         }
+        if(address(this).balance >= uint(goal)){
+            owner.transfer(uint(goal));
+            msg.sender.transfer(address(this).balance);
+            completed = true;
+            return true;
+        }
+        return false;
         
     }
     
@@ -157,6 +177,10 @@ contract crowdfunding{
         return uint(goal);
     }
     function getFunderList() public view returns (address[] memory){
-        return funderList;
+        address[] memory nonPayable = new address[](allFunders.length);
+        for(uint i =0;i<allFunders.length;i++){
+            nonPayable[i] = address(allFunders[i]);
+        }
+        return nonPayable;
     }
 }

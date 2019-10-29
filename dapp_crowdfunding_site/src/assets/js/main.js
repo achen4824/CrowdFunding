@@ -23,9 +23,9 @@
 				$('#demoContract').css("opacity","100");
 				$('#demoContract').text("Contract Details");
 				$('#error').text("");
-				$('#demoGoal').text("Goal: "+ (goal).toString()+ " ETH");
-				$('#demoValues').text("Funding Values: " + "$"+((262.64*(goal)*1)/(100)).toFixed(2).toString() +', '+"$"+ ((262.64*goal)/(50)).toFixed(2).toString()  +', '+"$"+((262.64*goal)/(20)).toFixed(2).toString()  +', '+"$"+((262.64*goal)/10).toFixed(2).toString()  +', '+"$"+((262.64*goal)/5 ).toFixed(2).toString());
-				$('#demoGoalAUD').text("Goal (AUD): $" + (goal*262.64).toFixed(2).toString());
+				$('#demoGoal').text("Goal: "+ (goal/262.64).toFixed(4).toString()+ " ETH");
+				$('#demoValues').text("Funding Values: " + "$"+(((goal)*1)/(100)).toFixed(2).toString() +', '+"$"+ ((goal)/(50)).toFixed(2).toString()  +', '+"$"+((goal)/(20)).toFixed(2).toString()  +', '+"$"+((goal)/10).toFixed(2).toString()  +', '+"$"+((goal)/5 ).toFixed(2).toString());
+				$('#demoGoalAUD').text("Goal (AUD): $" + (goal).toString());
 			}else{
 				$('#error').text("Please enter only numbers in fields.");
 			}

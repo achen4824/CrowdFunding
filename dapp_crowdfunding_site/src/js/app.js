@@ -61,16 +61,31 @@ App = {
       for(var i =0;i<userList.length;i++){
         //await
         await App.contracts.crowdfunding.at(userList[i]).then(async function(currInstance){
-          var description = await currInstance.getDescription();
-          var GoalCompletion = (await currInstance.getBalance() / await currInstance.getGoal())*100;
-          var strGoal = ((await currInstance.getGoal())/1000000000000000000*262.64).toFixed(2).toString();
+          //execute all promises in parallel as opposed to waiting
+          var completion = currInstance.ifCompleted();
+          var description =  currInstance.getDescription();
+          var GoalCompletion;
+          var goalV = currInstance.getGoal();
+          var strGoal;
+          var timeSec = currInstance.getTime();
 
-          var timeSec = ((await currInstance.getTime())).toString();
+          //run wait for all promisses to finish
+          await Promise.all([ description,goalV,timeSec,completion]).then(async function(valuesarr){
+            description = valuesarr[0];
+            GoalCompletion = ((await currInstance.getBalance())  / valuesarr[1]) * 100;
+            strGoal = ((valuesarr[1])/1000000000000000000*262.64).toFixed(2).toString();
+            timeSec = (( valuesarr[2])).toString();
+            completion = valuesarr[3];
+          })
 
-          var theList = "<section id='section"+currInstance.address+"'><div style='float:left'><h3>"+ currInstance.address +"</h3><p>Time: <span id='time"+currInstance.address+"'></span>\tGoal: $"+strGoal+"<br>"+  description +"</p><div style='width:100%;height:1em;border-color:#ffd5f0;border-width:thin;border-style:solid;border-radius:1em;overflow:hidden'><div style='width:"+GoalCompletion.toString()+"%;height:100%;background-color:#ffd5f0;border-radius:1em;background-opacity:20%' ></div></div></div>";
+          var theList = "<section id='section"+currInstance.address+"'><div style='float:left;width:80%'><h3>"+ currInstance.address +"</h3><p>Time: <span id='time"+currInstance.address+"'></span>\tGoal: $"+strGoal+"<br>"+  description +"</p>";
+          if(!completion){
+            theList += "<div style='width:100%;height:1em;border-color:#ffd5f0;border-width:thin;border-style:solid;border-radius:1em;overflow:hidden'><div style='width:"+GoalCompletion.toString()+"%;height:100%;background-color:#ffd5f0;border-radius:1em;background-opacity:20%' ></div></div>";
+          }
+          theList += "</div>";
           setInterval(function(){ App.constantTime(timeSec,currInstance.address)},1000);
           var boolTest = await currInstance.hasFund();
-          if(!boolTest){
+          if(!boolTest && !completion){
             theList += "<form style='float: right;'>";
             await currInstance.getValues().then(function(currValues){
               theList += '<select style="margin-bottom: 0.5em"  id="fundingSelectUser'+currInstance.address+'">'
@@ -81,7 +96,21 @@ App = {
             })
             theList += "</form>";
           }else{
-            theList += "<p>   (Already Funding this Project)</p>";
+            theList += "<p>(Already Funding this Project)</p>";
+            if(completion){
+              var funderlist = currInstance.getFunderList();
+              var funderValues = currInstance.getFunderValues();
+              await Promise.all([funderlist,funderValues]).then(function(values){
+                funderlist = values[0];
+                funderValues = values[1];
+              });
+              theList += "<ul>";
+              for(var i = 0;i<funderlist.length;i++){
+                theList += "<li>"+funderlist[i] +" $"+(funderValues[i]/1000000000000000000*262.64).toFixed(2).toString()+"</li>";
+              }
+              theList += "</ul>";
+    
+            }
           }
           theList += "</section>";
           $('#usercrowdfund').append(theList);
@@ -94,16 +123,31 @@ App = {
       for(var i =0;i<userList.length;i++){
         //await
         await App.contracts.crowdfunding.at(userList[i]).then(async function(currInstance){
-          var description = await currInstance.getDescription();
-          var GoalCompletion = (await currInstance.getBalance() / await currInstance.getGoal())*100;
-          var strGoal = ((await currInstance.getGoal())/1000000000000000000*262.64).toFixed(2).toString();
+          //execute all promises in parallel as opposed to waiting
+          var completion = currInstance.ifCompleted();
+          var description =  currInstance.getDescription();
+          var GoalCompletion;
+          var goalV = currInstance.getGoal();
+          var strGoal;
+          var timeSec = currInstance.getTime();
 
-          var timeSec = ((await currInstance.getTime())).toString();
+          //run wait for all promisses to finish
+          await Promise.all([ description,goalV,timeSec,completion]).then(async function(valuesarr){
+            description = valuesarr[0];
+            GoalCompletion = ((await currInstance.getBalance())  / valuesarr[1]) * 100;
+            strGoal = ((valuesarr[1])/1000000000000000000*262.64).toFixed(2).toString();
+            timeSec = (( valuesarr[2])).toString();
+            completion = valuesarr[3];
+          })
 
-          var theList = "<section id='section"+currInstance.address+"'><div style='float:left'><h3>"+ currInstance.address +"</h3><p>Time: <span id='time"+currInstance.address+"'></span>\tGoal: $"+strGoal+"<br>"+  description +"</p><div style='width:100%;height:1em;border-color:#ffd5f0;border-width:thin;border-style:solid;border-radius:1em;overflow:hidden'><div style='width:"+GoalCompletion.toString()+"%;height:100%;background-color:#ffd5f0;border-radius:1em;background-opacity:20%' ></div></div></div>";
+          var theList = "<section id='section"+currInstance.address+"'><div style='float:left;width:80%'><h3>"+ currInstance.address +"</h3><p>Time: <span id='time"+currInstance.address+"'></span>\tGoal: $"+strGoal+"<br>"+  description +"</p>";
+          if(!completion){
+            theList += "<div style='width:100%;height:1em;border-color:#ffd5f0;border-width:thin;border-style:solid;border-radius:1em;overflow:hidden'><div style='width:"+GoalCompletion.toString()+"%;height:100%;background-color:#ffd5f0;border-radius:1em;background-opacity:20%' ></div></div>";
+          }
+          theList += "</div>";
           setInterval(function(){ App.constantTime(timeSec,currInstance.address)},1000);
           var boolTest = await currInstance.hasFund();
-          if(!boolTest){
+          if(!boolTest && !completion){
             theList += "<form style='float: right;'>";
             await currInstance.getValues().then(function(currValues){
               theList += '<select style="margin-bottom: 0.5em"  id="fundingSelectUser'+currInstance.address+'">'
@@ -114,7 +158,22 @@ App = {
             })
             theList += "</form>";
           }else{
-            theList += "<p>   (Already Funding this Project)</p>";
+            theList += "<p>(Already Funding this Project)</p>";
+            if(completion){
+              theList += "<h3>Completed</h3>"
+              var funderlist = currInstance.getFunderList();
+              var funderValues = currInstance.getFunderValues();
+              await Promise.all([funderlist,funderValues]).then(function(values){
+                funderlist = values[0];
+                funderValues = values[1];
+              });
+              theList += "<ul>";
+              for(var i = 0;i<funderlist.length;i++){
+                theList += "<li>"+funderlist[i] +" $"+(funderValues[i]/1000000000000000000*262.64).toFixed(2).toString()+"</li>";
+              }
+              theList += "</ul>";
+    
+            }
           }
           theList += "</section>";
           $('#othercrowdfund').append(theList);
@@ -130,74 +189,104 @@ App = {
 
   fundContract: async function(addressID){
     await App.contracts.crowdfunding.at(addressID).then(async function(currInstance){
+
+      //execute all promises in parallel as opposed to waiting
       await currInstance.fund({from: App.account,value: $('#fundingSelectUser'+addressID).val()});
-      console.log("confirmed?");
-      
-      var description = await currInstance.getDescription();
-      var GoalCompletion = (await currInstance.getBalance() / await currInstance.getGoal())*100;
-      var strGoal = ((await currInstance.getGoal())/1000000000000000000*262.64).toFixed(2).toString();
+      console.log("confirmed");
+      var completion; 
+      var description =  currInstance.getDescription();
+      var GoalCompletion;
+      var goalV = currInstance.getGoal();
+      var strGoal;
+      var timeSec = currInstance.getTime();
 
-      var timeSec = ((await currInstance.getTime())).toString();
+      //run wait for all promisses to finish
+      await Promise.all([ description,goalV,timeSec]).then(async function(valuesarr){
+        console.log(valuesarr);
+        description = valuesarr[0];
+        GoalCompletion = ((await currInstance.getBalance())  / valuesarr[1]) * 100;
+        strGoal = ((valuesarr[1])/1000000000000000000*262.64).toFixed(2).toString();
+        timeSec = (( valuesarr[2])).toString();
+      })
+      completion = await currInstance.ifCompleted();
 
-      var theList = "<div style='float:left'><h3>"+ currInstance.address +"</h3><p>Time: <span id='time"+currInstance.address+"'></span>\tGoal: $"+strGoal+"<br>"+  description +"</p><div style='width:100%;height:1em;border-color:#ffd5f0;border-width:thin;border-style:solid;border-radius:1em;overflow:hidden'><div style='width:"+GoalCompletion.toString()+"%;height:100%;background-color:#ffd5f0;border-radius:1em;background-opacity:20%' ></div></div></div>";
+      console.log([completion,description,GoalCompletion,strGoal,timeSec]);
+
+      var theList = "<div style='float:left;width:80%'><h3>"+ currInstance.address +"</h3><p>Time: <span id='time"+currInstance.address+"'></span>\tGoal: $"+strGoal+"<br>"+  description +"</p>";
+      if(!completion){
+        theList += "<div style='width:100%;height:1em;border-color:#ffd5f0;border-width:thin;border-style:solid;border-radius:1em;overflow:hidden'><div style='width:"+GoalCompletion.toString()+"%;height:100%;background-color:#ffd5f0;border-radius:1em;background-opacity:20%' ></div></div></div>";
+      }
       setInterval(function(){ App.constantTime(timeSec,currInstance.address)},1000);
-      var boolTest = await currInstance.hasFund();
-      if(!boolTest){
-        theList += "<form style='float: right;'>";
-        await currInstance.getValues().then(function(currValues){
-          theList += '<select style="margin-bottom: 0.5em"  id="fundingSelectUser'+currInstance.address+'">'
-          for(var a =0;a<currValues.length;a++){
-            theList += "<option value=" + currValues[a] + " >$" + ((currValues[a]/1000000000000000000)*262.64).toFixed(2).toString()  + "</ option>";
-          }
-          theList += '</select><button type="button" onclick="App.fundContract(\''+currInstance.address+'\');return false;" class="button" >Fund</button>'
-        })
-        theList += "</form>";
-      }else{
-        theList += "<p>   (Already Funding this Project)</p>";
+      theList += "<p>(Already Funding this Project)</p>";
+      if(completion){
+        theList += "<h3>Completed</h3>"
+        console.log(completion);
+        var funderlist = currInstance.getFunderList();
+        var funderValues = currInstance.getFunderValues();
+        await Promise.all([funderlist,funderValues]).then(function(values){
+          funderlist = values[0];
+          funderValues = values[1];
+        });
+        theList += "<ul>";
+        for(var i = 0;i<funderlist.length;i++){
+          theList += "<li>"+funderlist[i] +" $"+(funderValues[i]/1000000000000000000*262.64).toFixed(2).toString()+"</li>";
+        }
+        theList += "</ul>";
       }
       $('#section'+addressID).html(theList);
-      
+
       //return App.getList();
       
     })
   },
 
   createContract: async function(){
-    var goals = $('#goal').val() * 1000000000000000000;
+    var goals = ($('#goal').val()/262.64) * 1000000000000000000;
     var days = $('#days').val();
-    var description = $('#description').val();
-    await App.contracts.crowdfunding.new(days,goals,description,{from: App.account}).then(function(currInstance){
-      App.contracts.storeData.deployed().then(async function(instance2) {
-        await instance2.createCrowdFund(currInstance.address,{from: App.account});
-        
-        var description = await currInstance.getDescription();
-        var GoalCompletion = (await currInstance.getBalance() / await currInstance.getGoal())*100;
-        var strGoal = ((await currInstance.getGoal())/1000000000000000000*262.64).toFixed(2).toString();
+    if(!isNaN(goals) && !isNaN(days)){
+      var description = $('#description').val();
+      await App.contracts.crowdfunding.new(days,goals,description,{from: App.account}).then(function(currInstance){
+        App.contracts.storeData.deployed().then(async function(instance2) {
+          await instance2.createCrowdFund(currInstance.address,{from: App.account});
+          
+          //execute all promises in parallel as opposed to waiting
+          var description =  currInstance.getDescription();
+          var GoalCompletion;
+          var goalV = currInstance.getGoal();
+          var strGoal;
+          var timeSec = currInstance.getTime();
 
-        var timeSec = ((await currInstance.getTime())).toString();
-
-        var theList = "<section id='section"+currInstance.address+"'><div style='float:left'><h3>"+ currInstance.address +"</h3><p>Time: <span id='time"+currInstance.address+"'></span>\tGoal: $"+strGoal+"<br>"+  description +"</p><div style='width:100%;height:1em;border-color:#ffd5f0;border-width:thin;border-style:solid;border-radius:1em;overflow:hidden'><div style='width:"+GoalCompletion.toString()+"%;height:100%;background-color:#ffd5f0;border-radius:1em;background-opacity:20%' ></div></div></div>";
-        setInterval(function(){ App.constantTime(timeSec,currInstance.address)},1000);
-        var boolTest = await currInstance.hasFund();
-        if(!boolTest){
-          theList += "<form style='float: right;'>";
-          await currInstance.getValues().then(function(currValues){
-            theList += '<select style="margin-bottom: 0.5em"  id="fundingSelectUser'+currInstance.address+'">'
-            for(var a =0;a<currValues.length;a++){
-              theList += "<option value=" + currValues[a] + " >$" + ((currValues[a]/1000000000000000000)*262.64).toFixed(2).toString()  + "</ option>";
-            }
-            theList += '</select><button type="button" onclick="App.fundContract(\''+currInstance.address+'\');return false;" class="button" >Fund</button>'
+          //run wait for all promisses to finish
+          await Promise.all([ description,goalV,timeSec]).then(async function(valuesarr){
+            description = valuesarr[0];
+            GoalCompletion = ((await currInstance.getBalance())  / valuesarr[1]) * 100;
+            strGoal = ((valuesarr[1])/1000000000000000000*262.64).toFixed(2).toString();
+            timeSec = (( valuesarr[2])).toString();
           })
-          theList += "</form>";
-        }else{
-          theList += "<p>   (Already Funding this Project)</p>";
-        }
-        theList += "</section>";
-        $('#usercrowdfund').append(theList);
-        //return App.getList();
-        
+
+          var theList = "<section id='section"+currInstance.address+"'><div style='float:left;width:80%'><h3>"+ currInstance.address +"</h3><p>Time: <span id='time"+currInstance.address+"'></span>\tGoal: $"+strGoal+"<br>"+  description +"</p><div style='width:100%;height:1em;border-color:#ffd5f0;border-width:thin;border-style:solid;border-radius:1em;overflow:hidden'><div style='width:"+GoalCompletion.toString()+"%;height:100%;background-color:#ffd5f0;border-radius:1em;background-opacity:20%' ></div></div></div>";
+          setInterval(function(){ App.constantTime(timeSec,currInstance.address)},1000);
+          var boolTest = await currInstance.hasFund();
+          if(!boolTest){
+            theList += "<form style='float: right;'>";
+            await currInstance.getValues().then(function(currValues){
+              theList += '<select style="margin-bottom: 0.5em"  id="fundingSelectUser'+currInstance.address+'">'
+              for(var a =0;a<currValues.length;a++){
+                theList += "<option value=" + currValues[a] + " >$" + ((currValues[a]/1000000000000000000)*262.64).toFixed(2).toString()  + "</ option>";
+              }
+              theList += '</select><button type="button" onclick="App.fundContract(\''+currInstance.address+'\');return false;" class="button" >Fund</button>'
+            })
+            theList += "</form>";
+          }else{
+            theList += "<p>(Already Funding this Project)</p>";
+          }
+          theList += "</section>";
+          $('#usercrowdfund').append(theList);
+          //return App.getList();
+          
+        })
       })
-    })
+    }
   },
 
   constantTime: function(initialTime,id){
