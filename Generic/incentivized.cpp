@@ -15,7 +15,7 @@ int main(){
 
         users = rand() % 1000 +1;
         value = rand() % 10000 + 1;
-        goal  = rand() % (users*value);
+        goal  = rand() % (users*value)+1;
 
         //std::cout << "users " << users << " value " << value << " goal "<<goal << std::endl;
 
