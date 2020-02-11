@@ -19,17 +19,15 @@ Crowdfunding often create large pools of financial capital which is withheld oft
 ### Generic Folder
 
 #### Files
-
-**incentivized.cpp** is used to model and test the price distribution function used in the contract.
-**OPCODEtoGAS.cpp** uses opcodes and gas costs specified in opcodetogasreference.csv to sum total gas costs from solidity assembly code it is invoked with ./(binary file) "file" and outputs sum of all identifiable OPCODE gas costs
+* **incentivized.cpp** is used to model and test the price distribution function used in the contract.
+* **OPCODEtoGAS.cpp** uses opcodes and gas costs specified in opcodetogasreference.csv to sum total gas costs from solidity assembly code it is invoked with ./(binary file) "file" and outputs sum of all identifiable OPCODE gas costs
 
 #### Folders
+* **Generic/Contracts:** The crowdfunding contracts created in solidity with their varying refund strategies. Equal distribution of funding goal, incentivized distribution of funding goal, and lottery refund. They were tested in the online Remix IDE for Solidity. 
 
-**Generic/Contracts:** The crowdfunding contracts created in solidity with their varying refund strategies. Equal distribution of funding goal, incentivized distribution of funding goal, and lottery refund. They were tested in the online Remix IDE for Solidity. 
+* **Generic/Assembly:** The crowdfunding contracts assembly code split into varying parts depending on time complexity. These parts were then run through OPCODE to gas cost to find the cost of running that part.
 
-**Generic/Assembly:** The crowdfunding contracts assembly code split into varying parts depending on time complexity. These parts were then run through OPCODE to gas cost to find the cost of running that part.
-
-**Generic.xlsx:** Contains the cost functions for each function within the contract as well as the functions for total gas cost of the contract. 
+* **Generic.xlsx:** Contains the cost functions for each function within the contract as well as the functions for total gas cost of the contract. 
 
 Solidity Code | OPCode | Gas Cost
 -------------- | -------- | -----------
@@ -41,10 +39,12 @@ variable = 2 | PUSH 0 | 3
 &nbsp; |POP | 2
 
 ### Distributed Application (DAPP) Website
-**dapp_crowdfunding_site:**  is a working distributed application for the deployment and funding of smart contracts it runs on NodeJS and utilizes the Web3 framework to interact with an Ethereum network thorugh the extension [MetaMask](https://github.com/MetaMask). This website was created as a proof of concept and served as a demonstration during a University Convention, although it didn't get any attention the Professor thought it was neat. 
+
+* **dapp_crowdfunding_site:**  is a working distributed application for the deployment and funding of smart contracts it runs on NodeJS and utilizes the Web3 framework to interact with an Ethereum network thorugh the extension [MetaMask](https://github.com/MetaMask). This website was created as a proof of concept and served as a demonstration during a University Convention, although it didn't get any attention the Professor thought it was neat. 
 
 ### Share Registration Contract
-**ShareRegistration** contains a smart contract implementation of the share registration and voting system described in the paper  “[Analysis and outlook of application of blockchain technology to equity crowdfunding in China](https://jfin-swufe.springeropen.com/articles/10.1186/s40854-016-0044-7),” [1] by Huasheng Zhu and Zach Zhizhong Zhou. 
+
+* **ShareRegistration** contains a smart contract implementation of the share registration and voting system described in the paper  “[Analysis and outlook of application of blockchain technology to equity crowdfunding in China](https://jfin-swufe.springeropen.com/articles/10.1186/s40854-016-0044-7),” [1] by Huasheng Zhu and Zach Zhizhong Zhou. 
 
 This contract is different in that it uses a weighted democratic process based on ownership of the shares to determine a proposal. A minimum amount of votes/participation is needed to start a proposal as well as a majority vote. All shareholders can create proposal in the form of a smart contract. When a proposal goes through, using the defer functionality the proposal functionality will be executed within the existing smart contracts allowing for modification of its funds/data/properties. 
 
