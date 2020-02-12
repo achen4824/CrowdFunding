@@ -1,6 +1,6 @@
 # Crowdfunding with Smart Contracts
 
-This is a project undertaken in **COMP SCI 2008** - *Topics in Computer Science* at University of Adelaide. 
+This is a project undertaken in **COMP SCI 2008** - *Topics in Computer Science* at University of Adelaide. - [Report](https://drive.google.com/open?id=1XGootVOD3XDH7ADbv3PevewACes6L4pt)
 
 Blockchain technology has the security to manages financial transfers with great speeds ensuring the funds security through decentralization and lots of math. Smart Contracts are self executing contracts that according to preconcieved programs can hold/send funds much like a normal contract. But because these smart contracts are withheld on the blockchain they are tamperproof and irreversible making them unable to be changed. However computation on the blockchain is not free and users pay a transactional fee based on computation **not** size of funds.
 
